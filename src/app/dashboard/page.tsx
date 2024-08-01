@@ -27,16 +27,34 @@ export default function Dashboard() {
     fetchBlogs();
   }, [router]);
 
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) console.error('Error logging out:', error.message);
+    else router.push('/login');
+  };
+
   if (loading) return <p>Loading...</p>;
 
   return (
-    <div>
-      <h1>Dashboard</h1>
-      <ul>
-        {blogs.map((blog) => (
-          <li key={blog.id}>{blog.title}</li>
-        ))}
-      </ul>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
+      <div className="w-full max-w-2xl bg-white p-6 rounded shadow-md">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 text-white py-2 px-4 rounded"
+          >
+            Logout
+          </button>
+        </div>
+        <ul>
+          {blogs.map((blog) => (
+            <li key={blog.id} className="mb-2">
+              {blog.title}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
