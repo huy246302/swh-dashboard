@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
+import '@/styles/globals.css'; // Ensure Tailwind CSS is imported
+import Sidebar from '../../components/Sidebar'; // Import the Sidebar component
+import Image from 'next/image'; // Import the Image component from Next.js
 
 export default function Dashboard() {
   const [blogs, setBlogs] = useState<any[]>([]);
@@ -36,25 +39,41 @@ export default function Dashboard() {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-2xl bg-white p-6 rounded shadow-md">
+    <div className="min-h-screen flex">
+      {/* Sidebar */}
+      <Sidebar />
+
+      {/* Main Content */}
+      <main className="flex-1 bg-gray-100 p-6">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Dashboard</h1>
           <button
             onClick={handleLogout}
             className="bg-red-500 text-white py-2 px-4 rounded"
           >
             Logout
           </button>
+          <div className="relative">
+            <button className="text-gray-600 focus:outline-none">
+              <Image
+                src="/user-icon.png" // Replace with actual user icon path
+                alt="User Icon"
+                width={32}
+                height={32}
+                className="rounded-full"
+              />
+            </button>
+          </div>
         </div>
-        <ul>
-          {blogs.map((blog) => (
-            <li key={blog.id} className="mb-2">
-              {blog.title}
-            </li>
-          ))}
-        </ul>
-      </div>
+        <div className="w-full max-w-2xl bg-white p-6 rounded shadow-md">
+          <ul>
+            {blogs.map((blog) => (
+              <li key={blog.id} className="mb-2">
+                {blog.title}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </main>
     </div>
   );
 }
