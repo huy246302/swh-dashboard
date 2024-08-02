@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import '@/styles/globals.css';
 
 export default function Sidebar() {
   return (
@@ -9,7 +10,7 @@ export default function Sidebar() {
           <Link href="/" className="hover:underline">Home</Link>
         </li>
         <li className="mb-2">
-          <Link href="/posts" className="hover:underline">Posts</Link>
+          <Link href="/blogs" className="hover:underline">Blogs</Link>
         </li>
         <li className="mb-2">
           <Link href="/settings" className="hover:underline">Settings</Link>
