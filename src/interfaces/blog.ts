@@ -24,14 +24,14 @@ export interface Author {
 }
 
 export interface Category {
-  id: string;
+  id: number; // Ensure 'id' is a number
   name: string;
 }
 
 export interface SubCategory {
-  id: string;
+  id: number; // Ensure 'id' is a number
   name: string;
-  categoryId: string;
+  category_id: number; // Ensure 'category_id' is a number
 }
 
 export interface Tag {

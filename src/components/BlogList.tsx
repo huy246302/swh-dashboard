@@ -12,7 +12,7 @@ export default function BlogList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const blogsPerPage = 6;
+  const blogsPerPage = 10;
 
   useEffect(() => {
     async function fetchBlogs() {
@@ -64,11 +64,11 @@ export default function BlogList() {
   };
 
   return (
-    <main className="flex-1 bg-gray-100 p-6">
-      <div className="w-full max-w-6xl mx-auto bg-white p-6 rounded shadow-md">
+    <main className="flex-1 bg-gray-100">
+      <div className="p-4 rounded shadow-md">
         <table className="min-w-full bg-white table-auto">
           <thead>
-            <tr>
+            <tr className="bg-stone-200">
               {['ID', 'Title', 'Author', 'Category', 'Subcategory', 'Content', 'Image', 'Status', 'Created At', 'Actions'].map((col, index) => (
                 <th
                   key={index}

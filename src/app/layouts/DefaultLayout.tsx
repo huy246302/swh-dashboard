@@ -36,7 +36,7 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
             <UserDropdown />
           </div>
         </header>
-        <main className="flex-1 p-4">
+        <main className="p-4">
           {children}
         </main>
       </div>
