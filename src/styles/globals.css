@@ -31,3 +31,17 @@ body {
     text-wrap: balance;
   }
 }
+
+aside {
+  position: relative;
+}
+
+.resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 5px; /* Handle width */
+  background-color: #4a4a4a; /* Handle color */
+  cursor: ew-resize;
+}
