@@ -19,7 +19,13 @@ export default function BlogList() {
       try {
         const { data, error } = await supabase
           .from('blog_posts')
-          .select('*, authors(name), categories(name), sub_categories(name)')
+          .select(`
+            *,
+            authors (name),
+            categories (name),
+            sub_categories!blog_posts_sub_category_id_fkey (name),
+            tags (name)
+          `)
           .order(sortColumn, { ascending: sortOrder === 'asc' });
 
         if (error) {
@@ -82,8 +88,8 @@ export default function BlogList() {
           </thead>
           <tbody>
             {currentBlogs.map((blog) => (
-              <tr key={blog.id}>
-                <td className="py-2 px-4 border-b">{blog.id}</td>
+              <tr key={blog.blog_id}>
+                <td className="py-2 px-4 border-b">{blog.blog_id}</td>
                 <td className="py-2 px-4 border-b">{blog.title}</td>
                 <td className="py-2 px-4 border-b">{blog.authors?.name}</td>
                 <td className="py-2 px-4 border-b">{blog.categories?.name}</td>

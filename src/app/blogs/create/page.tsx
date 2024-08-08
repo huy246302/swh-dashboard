@@ -1,41 +1,52 @@
 // src/app/blogs/create/page.tsx
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import CKEditorComponent from '@/components/CKEditorComponent';
 import { BlogPost, Author, Category, SubCategory } from '@/interfaces/blog';
+
+// Dynamically import CKEditorComponent with client-side rendering
+const CKEditorComponent = dynamic(() => import('@/components/CKEditorComponent'), { ssr: false });
 
 export default function CreateBlog() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [img, setImg] = useState('');
-  const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [subCategoryId, setSubCategoryId] = useState<number | null>(null);
-  const [authorId, setAuthorId] = useState<number | null>(null);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [subCategoryId, setSubCategoryId] = useState<string | null>(null);
+  const [authorId, setAuthorId] = useState<string | null>(null);
   const [authors, setAuthors] = useState<Author[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [showPopup, setShowPopup] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     async function fetchData() {
-      // Fetch authors
-      const { data: authorsData, error: authorsError } = await supabase.from('authors').select('*');
-      if (authorsError) console.error('Error fetching authors:', authorsError.message);
-      else if (authorsData) setAuthors(authorsData);
+      try {
+        const [authorsResult, categoriesResult, subCategoriesResult] = await Promise.all([
+          supabase.from('authors').select('*'),
+          supabase.from('categories').select('*'),
+          supabase.from('sub_categories').select('*'),
+        ]);
 
-      // Fetch categories
-      const { data: categoriesData, error: categoriesError } = await supabase.from('categories').select('*');
-      if (categoriesError) console.error('Error fetching categories:', categoriesError.message);
-      else if (categoriesData) setCategories(categoriesData);
+        if (authorsResult.error || categoriesResult.error || subCategoriesResult.error) {
+          throw new Error(authorsResult.error?.message || categoriesResult.error?.message || subCategoriesResult.error?.message);
+        }
 
-      // Fetch subcategories
-      const { data: subCategoriesData, error: subCategoriesError } = await supabase.from('sub_categories').select('*');
-      if (subCategoriesError) console.error('Error fetching subcategories:', subCategoriesError.message);
-      else if (subCategoriesData) setSubCategories(subCategoriesData);
+        setAuthors(authorsResult.data || []);
+        setCategories(categoriesResult.data || []);
+        setSubCategories(subCategoriesResult.data || []);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('An unexpected error occurred');
+      } finally {
+        setLoading(false);
+      }
     }
 
     fetchData();
@@ -43,19 +54,28 @@ export default function CreateBlog() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data, error } = await supabase
-      .from('blog_posts')
-      .insert([{ title, content, img, category_id: categoryId, sub_category_id: subCategoryId, author_id: authorId }])
-      .select('*');
+    try {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .insert([{ title, content, img, category_id: categoryId, sub_category_id: subCategoryId, author_id: authorId }])
+        .select('*');
 
-    if (error) console.error('Error creating blog:', error.message);
-    else if (data && data.length > 0) {
-      setShowPopup(true);
-      setTimeout(() => {
-        router.push('/blogs');
-      }, 2000); // Show popup for 2 seconds before redirecting
+      if (error) throw new Error(error.message);
+
+      if (data) {
+        setShowPopup(true);
+        setTimeout(() => {
+          router.push('/blogs');
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('Error creating blog:', err);
+      setError('An error occurred while creating the blog');
     }
   };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="container mx-auto p-4">
@@ -79,38 +99,38 @@ export default function CreateBlog() {
         />
         <select
           value={categoryId ?? ''}
-          onChange={(e) => setCategoryId(parseInt(e.target.value, 10))}
+          onChange={(e) => setCategoryId(e.target.value)}
           className="w-full p-3 border border-gray-300 rounded"
         >
           <option value="">Select Category</option>
           {categories.map(category => (
-            <option key={category.id} value={category.id}>
+            <option key={category.category_id} value={category.category_id}>
               {category.name}
             </option>
           ))}
         </select>
         <select
           value={subCategoryId ?? ''}
-          onChange={(e) => setSubCategoryId(parseInt(e.target.value, 10))}
+          onChange={(e) => setSubCategoryId(e.target.value)}
           className="w-full p-3 border border-gray-300 rounded"
         >
           <option value="">Select Subcategory</option>
           {subCategories
             .filter(subCategory => subCategory.category_id === categoryId)
             .map(subCategory => (
-              <option key={subCategory.id} value={subCategory.id}>
+              <option key={subCategory.sub_category_id} value={subCategory.sub_category_id}>
                 {subCategory.name}
               </option>
             ))}
         </select>
         <select
           value={authorId ?? ''}
-          onChange={(e) => setAuthorId(parseInt(e.target.value, 10))}
+          onChange={(e) => setAuthorId(e.target.value)}
           className="w-full p-3 border border-gray-300 rounded"
         >
           <option value="">Select Author</option>
           {authors.map(author => (
-            <option key={author.id} value={author.id}>
+            <option key={author.author_id} value={author.author_id}>
               {author.name}
             </option>
           ))}
