@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowUp, faArrowDown, faEye, faEdit, faTrash, faFileExport } from '@fortawesome/free-solid-svg-icons';
 import type { BlogPost } from '@/interfaces/blog';
 import "@/styles/globals.css";
+import TableHeader from '@/components/TableHeader';
+import BlogTableBody from '@/components/BlogTableBody';
+import Pagination from '@/components/Pagination';
+import { exportToCSV } from '@/utils/exportToCSV';
 
 export default function BlogList() {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
@@ -59,80 +61,63 @@ export default function BlogList() {
     setCurrentPage(pageNumber);
   };
 
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this blog post?')) {
+      try {
+        const { error } = await supabase
+          .from('blog_posts')
+          .delete()
+          .eq('blog_id', id);
+  
+        if (error) {
+          throw error;
+        }
+  
+        // Remove deleted blog from the state
+        setBlogs(blogs.filter(blog => blog.blog_id !== id));
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error('Error deleting blog:', error.message);
+        } else {
+          console.error('Unexpected error', error);
+        }
+      }
+    }
+  };
+
+  const handleExport = () => {
+    const headers = [
+      'blog_id', 'title', 'authors_name', 'categories_name', 'sub_categories_name', 'content', 'img', 'status', 'created_at'
+    ];
+    exportToCSV(blogs, 'blogs.csv', headers);
+  };
+
   const indexOfLastBlog = currentPage * blogsPerPage;
   const indexOfFirstBlog = indexOfLastBlog - blogsPerPage;
   const currentBlogs = blogs.slice(indexOfFirstBlog, indexOfLastBlog);
   const totalPages = Math.ceil(blogs.length / blogsPerPage);
 
-  const renderSortIcon = (column: string) => {
-    if (sortColumn !== column) return null;
-    return sortOrder === 'asc' ? <FontAwesomeIcon icon={faArrowUp} /> : <FontAwesomeIcon icon={faArrowDown} />;
-  };
-
   return (
     <main className="flex-1 bg-gray-100">
       <div className="p-4 rounded shadow-md">
         <table className="min-w-full bg-white table-auto">
-          <thead>
-            <tr className="bg-stone-200">
-              {['ID', 'Title', 'Author', 'Category', 'Subcategory', 'Content', 'Image', 'Status', 'Created At', 'Actions'].map((col, index) => (
-                <th
-                  key={index}
-                  className={`py-2 px-4 border-b text-left ${col === 'Actions' ? 'text-center' : 'cursor-pointer'}`}
-                  onClick={() => handleSort(col.toLowerCase().replace(' ', '_'))}
-                >
-                  {col} {['ID', 'Title', 'Author', 'Category', 'Subcategory', 'Content', 'Created At'].includes(col) && renderSortIcon(col.toLowerCase().replace(' ', '_'))}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {currentBlogs.map((blog) => (
-              <tr key={blog.blog_id}>
-                <td className="py-2 px-4 border-b">{blog.blog_id}</td>
-                <td className="py-2 px-4 border-b">{blog.title}</td>
-                <td className="py-2 px-4 border-b">{blog.authors?.name}</td>
-                <td className="py-2 px-4 border-b">{blog.categories?.name}</td>
-                <td className="py-2 px-4 border-b">{blog.sub_categories?.name}</td>
-                <td className="py-2 px-4 border-b">{blog.content.substring(0, 100)}...</td>
-                <td className="py-2 px-4 border-b">
-                  {blog.img && <img src={blog.img} alt={blog.title} className="w-16 h-16 object-cover mx-auto" />}
-                </td>
-                <td className="py-2 px-4 border-b">Status</td>
-                <td className="py-2 px-4 border-b">{new Date(blog.created_at).toLocaleDateString()}</td>
-                <td className="py-2 px-4 border-b text-center">
-                  <div className="flex justify-center space-x-2">
-                    <button className="text-blue-500 hover:text-blue-700" title="View">
-                      <FontAwesomeIcon icon={faEye} />
-                    </button>
-                    <button className="text-green-500 hover:text-green-700" title="Edit">
-                      <FontAwesomeIcon icon={faEdit} />
-                    </button>
-                    <button className="text-red-500 hover:text-red-700" title="Delete">
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                    <button className="text-yellow-500 hover:text-yellow-700" title="Export">
-                      <FontAwesomeIcon icon={faFileExport} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+          <TableHeader
+            columns={['ID', 'Title', 'Author', 'Category', 'Subcategory', 'Content', 'Image', 'Status', 'Created At', 'Actions']}
+            sortColumn={sortColumn}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+          />
+          <BlogTableBody
+            blogs={currentBlogs}
+            onDelete={handleDelete}
+            onExport={handleExport}
+          />
         </table>
-        <div className="mt-6 flex justify-center">
-          {Array.from({ length: totalPages }, (_, index) => (
-            <button
-              key={index + 1}
-              onClick={() => handleClick(index + 1)}
-              className={`mx-1 px-3 py-1 rounded ${
-                index + 1 === currentPage ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
-              }`}
-            >
-              {index + 1}
-            </button>
-          ))}
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handleClick}
+        />
       </div>
     </main>
   );
